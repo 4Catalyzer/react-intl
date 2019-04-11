@@ -67,18 +67,16 @@
     "setupTestFrameworkScriptFile": "./test/setup.js"
   },
   "dependencies": {
-    "create-react-context": "^0.2.3",
-    "hoist-non-react-statics": "^2.5.5",
+    "hoist-non-react-statics": "^3.3.0",
     "intl-format-cache": "^2.0.5",
     "intl-messageformat": "^2.1.0",
     "intl-relativeformat": "^2.1.0",
     "invariant": "^2.1.1",
-    "react-display-name": "^0.2.4",
-    "react-lifecycles-compat": "^3.0.4"
+    "react-display-name": "^0.2.4"
   },
   "peerDependencies": {
     "prop-types": "^15.5.4",
-    "react": "^0.14.9 || ^15.0.0 || ^16.0.0"
+    "react": "^16.8.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",
@@ -92,7 +90,7 @@
     "@babel/preset-react": "^7.0.0",
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^7.1.1",
-    "babel-jest": "^23.6.0",
+    "babel-jest": "^24.7.1",
     "babel-plugin-react-intl": "^2.0.0",
     "babel-plugin-transform-member-expression-literals": "^6.9.4",
     "babel-plugin-transform-property-literals": "^6.9.4",
@@ -102,10 +100,8 @@
     "browserify": "^14.0.0",
     "browserify-shim": "^3.8.11",
     "cross-env": "^4.0.0",
-    "enzyme": "^3.6.0",
-    "enzyme-adapter-react-14": "^1.1.0",
-    "enzyme-adapter-react-15": "^1.1.0",
-    "enzyme-adapter-react-16": "^1.5.0",
+    "enzyme": "^3.9.0",
+    "enzyme-adapter-react-16": "^1.12.1",
     "eslint": "^3.10.2",
     "eslint-plugin-react": "^7.0.1",
     "expect": "^1.9.0",
@@ -114,16 +110,16 @@
     "glob": "^7.0.0",
     "intl": "^1.2.1",
     "intl-messageformat-parser": "^1.2.0",
-    "jest": "^23.6.0",
+    "jest": "^24.7.1",
     "mkdirp": "^0.5.1",
-    "prettier": "^1.6.1",
+    "prettier": "^1.16.4",
     "progress": "^2.0.3",
     "promise-queue": "^2.2.5",
-    "prop-types": "^15.6.1",
-    "react": "^16.3.1",
-    "react-addons-test-utils": "^0.14",
-    "react-dom": "^16.3.3",
-    "react-test-renderer": "^16.3.1",
+    "prop-types": "^15.7.2",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "react-is": "^16.8.6",
+    "react-test-renderer": "^16.8.6",
     "rimraf": "^2.4.2",
     "rollup": "^0.66.2",
     "rollup-plugin-babel": "^4.0.3",
@@ -145,12 +141,9 @@
     "build:dist:prod": "cross-env NODE_ENV=production rollup -c rollup.config.dist.js",
     "build:dist": "yarn run build:dist:dev && yarn run build:dist:prod",
     "build": "yarn run build:data && yarn run build:lib && yarn run build:dist",
-    "react:clean": "rimraf node_modules/{react,react-dom,react-addons-test-utils}",
-    "react:14": "yarn run react:clean && yarn add -D react@^0.14 react-dom@^0.14 react-addons-test-utils@^0.14 --ignore-scripts",
-    "react:15": "yarn run react:clean && yarn add -D react@^15 react-dom@^15 react-test-renderer@^15 --ignore-scripts",
-    "react:16": "yarn run react:clean && yarn add -D react@^16.3.1 react-dom@^16.3.3 react-test-renderer@^16.3.1 --ignore-scripts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "react:16": "yarn run react:clean && yarn add -D react@^16.3.1 react-dom@^16.3.3 react-test-renderer@^16.3.1 --ignore-scripts",
     "test": "jest --coverage --verbose",
     "test:react": "yarn run react:14 && jest && yarn run react:15 && jest && yarn run react:16 && jest",
     "test:all": "yarn run lint && yarn run test && yarn run test:react",
@@ -159,6 +152,6 @@
     "examples:install": "babel-node scripts/examples yarn install",
     "examples:link": "yarn link && babel-node scripts/examples yarn link react-intl",
     "preversion": "yarn run clean && yarn run build && yarn run test:all",
-    "prepare": "yarn run clean && yarn run build"
+    "prepublishOnly": "yarn run clean && yarn run build"
   }
 }

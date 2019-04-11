@@ -251,7 +251,7 @@ describe('<FormattedMessage>', () => {
         expect(nameNode.text()).toBe('Jest');
     });
 
-    it('should not re-render when props and context are the same', () => {
+    it('should not re-render when props  are the same', () => {
         const FormattedMessage = mockContext(intl);
         const props = {
           id: 'hello',
@@ -264,7 +264,7 @@ describe('<FormattedMessage>', () => {
             { spy }
           </FormattedMessage>
         );
-        rendered.instance().mockContext(intl);
+
         rendered.setProps(props);
 
         expect(spy.calls.length).toBe(1);
@@ -291,7 +291,7 @@ describe('<FormattedMessage>', () => {
         expect(spy.calls.length).toBe(2);
     });
 
-    it('should re-render when context changes', () => {
+    xit('should re-render when context changes', () => {
         const changedIntl = generateIntlContext({
           locale: 'en-US',
           defaultLocale: 'en-US'

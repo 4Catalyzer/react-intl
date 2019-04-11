@@ -4,44 +4,50 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import withIntl from './withIntl';
-import {intlShape, dateTimeFormatPropTypes} from '../types';
-import {invariantIntlContext, shouldIntlComponentUpdate} from '../utils';
+import React, { useMemo } from 'react'
+import PropTypes from 'prop-types'
+import useIntl from './useIntl'
+import { intlShape, dateTimeFormatPropTypes } from '../types'
 
-class FormattedTime extends Component {
-  static displayName = 'FormattedTime';
+function FormattedTime(props) {
+  const { formatTime, textComponent: Text } = useIntl()
+  const { value, children } = props
 
-  static propTypes = {
-    ...dateTimeFormatPropTypes,
-    intl: intlShape,
-    value: PropTypes.any.isRequired,
-    format: PropTypes.string,
-    children: PropTypes.func,
-  };
-
-  constructor(props) {
-    super(props);
-    invariantIntlContext(props);
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return shouldIntlComponentUpdate(this, nextProps, nextState);
-  }
-
-  render() {
-    const {formatTime, textComponent: Text} = this.props.intl;
-    const {value, children} = this.props;
-
-    let formattedTime = formatTime(value, this.props);
+  return useMemo(() => {
+    let formattedTime = formatTime(value, props)
 
     if (typeof children === 'function') {
-      return children(formattedTime);
+      return children(formattedTime)
     }
 
-    return <Text>{formattedTime}</Text>;
-  }
+    return <Text>{formattedTime}</Text>
+  }, [
+    value,
+    children,
+    props.localeMatcher,
+    props.formatMatcher,
+    props.timeZone,
+    props.hour12,
+    props.weekday,
+    props.era,
+    props.year,
+    props.month,
+    props.day,
+    props.hour,
+    props.minute,
+    props.second,
+    props.timeZoneName,
+  ])
 }
 
-export default withIntl(FormattedTime)
+FormattedTime.displayName = 'FormattedTime'
+
+FormattedTime.propTypes = {
+  ...dateTimeFormatPropTypes,
+  intl: intlShape,
+  value: PropTypes.any.isRequired,
+  format: PropTypes.string,
+  children: PropTypes.func,
+}
+
+export default FormattedTime

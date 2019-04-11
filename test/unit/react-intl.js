@@ -17,35 +17,35 @@ describe('react-intl', () => {
 
         describe('React Components', () => {
             it('exports `IntlProvider`', () => {
-                expect(ReactIntl.IntlProvider).toBeA('function');
+                expect(ReactIntl.IntlProvider).toBeAnElementType();
             });
 
             it('exports `FormattedDate`', () => {
-                expect(ReactIntl.FormattedDate).toBeA('function');
+                expect(ReactIntl.FormattedDate).toBeAnElementType();
             });
 
             it('exports `FormattedTime`', () => {
-                expect(ReactIntl.FormattedTime).toBeA('function');
+                expect(ReactIntl.FormattedTime).toBeAnElementType();
             });
 
             it('exports `FormattedRelative`', () => {
-                expect(ReactIntl.FormattedRelative).toBeA('function');
+                expect(ReactIntl.FormattedRelative).toBeAnElementType();
             });
 
             it('exports `FormattedNumber`', () => {
-                expect(ReactIntl.FormattedNumber).toBeA('function');
+                expect(ReactIntl.FormattedNumber).toBeAnElementType();
             });
 
             it('exports `FormattedPlural`', () => {
-                expect(ReactIntl.FormattedPlural).toBeA('function');
+                expect(ReactIntl.FormattedPlural).toBeAnElementType();
             });
 
             it('exports `FormattedMessage`', () => {
-                expect(ReactIntl.FormattedMessage).toBeA('function');
+                expect(ReactIntl.FormattedMessage).toBeAnElementType();
             });
 
             it('exports `FormattedHTMLMessage`', () => {
-                expect(ReactIntl.FormattedHTMLMessage).toBeA('function');
+                expect(ReactIntl.FormattedHTMLMessage).toBeAnElementType();
             });
         });
 

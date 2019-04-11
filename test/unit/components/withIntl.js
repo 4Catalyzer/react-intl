@@ -66,9 +66,9 @@ describe('withIntl()', () => {
         rendered = mountWithProvider(<Injected />);
         const wrappedComponent = rendered.find(Wrapped);
         // React 16 renders different in the wrapper
-        const intlProvider = React.version.startsWith('16') ?  
+        const intlProvider = React.version.startsWith('16') ?
             rendered.find(IntlProvider).childAt(0) : rendered.find(IntlProvider).childAt(0).childAt(0);
-   
+
         expect(
             wrappedComponent.prop('intl')
         ).toBe(intlProvider.instance().getContext());
@@ -102,44 +102,12 @@ describe('withIntl()', () => {
                 rendered = mountWithProvider(<Injected />);
                 const wrapped = rendered.find(Wrapped);
                 // React 16 renders differently
-                const intlProvider = React.version.startsWith('16') ? 
+                const intlProvider = React.version.startsWith('16') ?
                     rendered.find(IntlProvider).childAt(0) : rendered.find(IntlProvider).childAt(0).childAt(0);
-   
+
                 expect(wrapped.prop(propName)).toBe(
                     intlProvider.instance().getContext()
-                );               
-            });
-        });
-
-        describe('withRef', () => {
-            it('throws when `false` and getWrappedInstance() is called', () => {
-                const Injected = withIntl(Wrapped);
-
-                rendered = mountWithProvider(<Injected />);
-                const wrapper = rendered.find(Injected);
-
-                expect(() => wrapper.instance().getWrappedInstance()).toThrow(
-                    '[React Intl] To access the wrapped instance, the `{withRef: true}` option must be set when calling: `withIntl()`'
                 );
-            });
-
-            it('does not throw when `true` getWrappedInstance() is called', () => {
-              Wrapped = class extends React.Component {
-                render () {
-                  return null
-                }
-              }
-
-              const Injected = withIntl(Wrapped, { withRef: true });
-
-              rendered = mountWithProvider(<Injected />);
-              const wrapper = rendered.find(Injected);
-              const wrapped = rendered.find(Wrapped);
-
-                expect(() => wrapper.instance().getWrappedInstance())
-                  .toNotThrow();
-                expect(wrapper.instance().getWrappedInstance())
-                  .toBe(wrapped.instance());
             });
         });
     });

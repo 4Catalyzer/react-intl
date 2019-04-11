@@ -4,56 +4,46 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import withIntl from './withIntl';
-import {intlShape, pluralFormatPropTypes} from '../types';
-import {invariantIntlContext, shouldIntlComponentUpdate} from '../utils';
+import React, { useMemo } from 'react'
+import PropTypes from 'prop-types'
+import useIntl from './useIntl'
+import { intlShape, pluralFormatPropTypes } from '../types'
 
-class FormattedPlural extends Component {
-  static displayName = 'FormattedPlural';
+function FormattedPlural(props) {
+  const { formatPlural, textComponent: Text } = useIntl()
+  const { value, other, children } = props
 
-  static propTypes = {
-    ...pluralFormatPropTypes,
-    intl: intlShape,
-    value: PropTypes.any.isRequired,
-
-    other: PropTypes.node.isRequired,
-    zero: PropTypes.node,
-    one: PropTypes.node,
-    two: PropTypes.node,
-    few: PropTypes.node,
-    many: PropTypes.node,
-
-    children: PropTypes.func,
-  };
-
-  static defaultProps = {
-    style: 'cardinal',
-  };
-
-  constructor(props) {
-    super(props);
-    invariantIntlContext(props);
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return shouldIntlComponentUpdate(this, nextProps, nextState);
-  }
-
-  render() {
-    const {formatPlural, textComponent: Text} = this.props.intl;
-    const {value, other, children} = this.props;
-
-    let pluralCategory = formatPlural(value, this.props);
-    let formattedPlural = this.props[pluralCategory] || other;
+  return useMemo(() => {
+    let pluralCategory = formatPlural(value, props)
+    let formattedPlural = props[pluralCategory] || other
 
     if (typeof children === 'function') {
-      return children(formattedPlural);
+      return children(formattedPlural)
     }
 
-    return <Text>{formattedPlural}</Text>;
-  }
+    return <Text>{formattedPlural}</Text>
+  }, [value, other, children, props.style])
 }
 
-export default withIntl(FormattedPlural)
+FormattedPlural.displayName = 'FormattedPlural'
+
+FormattedPlural.propTypes = {
+  ...pluralFormatPropTypes,
+  intl: intlShape,
+  value: PropTypes.any.isRequired,
+
+  other: PropTypes.node.isRequired,
+  zero: PropTypes.node,
+  one: PropTypes.node,
+  two: PropTypes.node,
+  few: PropTypes.node,
+  many: PropTypes.node,
+
+  children: PropTypes.func,
+}
+
+FormattedPlural.defaultProps = {
+  style: 'cardinal',
+}
+
+export default FormattedPlural

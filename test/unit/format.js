@@ -89,7 +89,7 @@ describe('format API', () => {
     describe('exports', () => {
         Object.keys(intlFormatPropTypes).forEach((name) => {
             it(`exports \`${name}\``, () => {
-                expect(f[name]).toBeA('function');
+                expect(f[name]).toBeAnElementType();
             });
         });
     });

@@ -4,44 +4,47 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, {Component} from 'react';
-import PropTypes from 'prop-types';
-import withIntl from './withIntl';
-import {intlShape, numberFormatPropTypes} from '../types';
-import {invariantIntlContext, shouldIntlComponentUpdate} from '../utils';
+import React, { useMemo } from 'react'
+import PropTypes from 'prop-types'
+import useIntl from './useIntl'
+import { intlShape, numberFormatPropTypes } from '../types'
 
-class FormattedNumber extends Component {
-  static displayName = 'FormattedNumber';
+function FormattedNumber(props) {
+  const { formatNumber, textComponent: Text } = useIntl()
+  const { value, children } = props
 
-  static propTypes = {
-    ...numberFormatPropTypes,
-    intl: intlShape,
-    value: PropTypes.any.isRequired,
-    format: PropTypes.string,
-    children: PropTypes.func,
-  };
-
-  constructor(props) {
-    super(props);
-    invariantIntlContext(props);
-  }
-
-  shouldComponentUpdate(nextProps, nextState) {
-    return shouldIntlComponentUpdate(this, nextProps, nextState);
-  }
-
-  render() {
-    const {formatNumber, textComponent: Text} = this.props.intl;
-    const {value, children} = this.props;
-
-    let formattedNumber = formatNumber(value, this.props);
+  return useMemo(() => {
+    let formattedNumber = formatNumber(value, props)
 
     if (typeof children === 'function') {
-      return children(formattedNumber);
+      return children(formattedNumber)
     }
 
-    return <Text>{formattedNumber}</Text>;
-  }
+    return <Text>{formattedNumber}</Text>
+  }, [
+    value,
+    children,
+    props.localeMatcher,
+    props.style,
+    props.currency,
+    props.currencyDisplay,
+    props.useGrouping,
+    props.minimumIntegerDigits,
+    props.minimumFractionDigits,
+    props.maximumFractionDigits,
+    props.minimumSignificantDigits,
+    props.maximumSignificantDigits,
+  ])
 }
 
-export default withIntl(FormattedNumber)
+FormattedNumber.displayName = 'FormattedNumber'
+
+FormattedNumber.propTypes = {
+  ...numberFormatPropTypes,
+  intl: intlShape,
+  value: PropTypes.any.isRequired,
+  format: PropTypes.string,
+  children: PropTypes.func,
+}
+
+export default FormattedNumber

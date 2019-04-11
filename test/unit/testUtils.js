@@ -1,82 +1,74 @@
 import React from 'react'
-import {shallow} from 'enzyme';
+import { mount, shallow } from 'enzyme'
+import { Provider } from '../../src/components/useIntl'
 
-export const makeMockContext = (modulePath, exportName = 'default') => (intl = null) => {
-  jest.resetModules();
-  jest.doMock(
-    '../../src/components/withIntl',
-    () => ({
-      __esModule: true,
-      default: (WrappedComponent) => {
-        return class extends React.Component {
-          constructor (props) {
-            super(props)
+function Wrapper({ intl, element, ...props }) {
+  return <Provider value={intl}>{React.cloneElement(element, props)}</Provider>
+}
 
-            this.state = {
-              intl: false
-            }
-          }
+export function mountWithContext(intl, element, options) {
+  return mount(<Wrapper intl={intl} element={element} />, options)
+}
 
-          mockContext (intl) {
-            this.setState({ intl });
-          }
+export const makeMockContext = (modulePath, exportName = 'default') => (
+  intl = null
+) => {
+  jest.resetModules()
+  jest.doMock('../../src/components/useIntl', () => ({
+    __esModule: true,
+    default: () => {
+      return intl
+    },
+    Provider: ({ children, value }) =>
+      React.cloneElement(React.Children.only(children), { intl: value }),
+  }))
 
-          render () {
-            return (
-              <WrappedComponent
-                {...this.props}
-                intl={this.state.intl || intl}
-              />
-            )
-          }
-        }
-      },
-      Provider: ({ children, value }) => React.cloneElement(
-        React.Children.only(children),
-        { intl: value }
-      )
-    })
-  )
+  let myModule
+  jest.isolateModules(() => {
+    myModule = require(modulePath)[exportName]
+  })
 
-  return require(modulePath)[exportName]
+  return myModule
 }
 
 export const shallowDeep = (componentInstance, depth, options) => {
-  let rendered = shallow(componentInstance, options);
+  let rendered = shallow(componentInstance, options)
 
   for (let i = 1; i < depth; i++) {
-    rendered = rendered.dive();
+    rendered = rendered.dive()
   }
 
   return rendered
 }
 
 export class SpyComponent extends React.Component {
-  constructor (props) {
+  constructor(props) {
     super(props)
 
-    this._renders = 0;
+    this._renders = 0
   }
 
-  getRenderCount () {
-    return this._renders;
+  getRenderCount() {
+    return this._renders
   }
 
-  render () {
-    this._renders++;
+  render() {
+    this._renders++
 
     return null
   }
 }
 
-const mockProviderContext = makeMockContext('../../src/components/provider');
-export const generateIntlContext = (intl) => {
-  const IntlProvider = mockProviderContext();
+const mockProviderContext = makeMockContext('../../src/components/provider')
+export const generateIntlContext = intl => {
+  const IntlProvider = mockProviderContext()
 
   return shallowDeep(
     <IntlProvider {...intl}>
       <div />
     </IntlProvider>,
     2
-  ).first().prop('value');
+  )
+    .first()
+    .prop('value')
 }

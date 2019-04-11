@@ -10,9 +10,6 @@ file in the root directory of React's source tree.
 */
 
 import invariant from 'invariant';
-import {intlConfigPropTypes} from './types';
-
-const intlConfigPropNames = Object.keys(intlConfigPropTypes);
 
 const ESCAPED_CHARS = {
   '&': '&amp;',
@@ -81,24 +78,13 @@ export function shallowEquals(objA, objB) {
 }
 
 export function shouldIntlComponentUpdate(
-  {props, state, context = {}},
+  {props, state},
   nextProps,
-  nextState,
-  nextContext = {}
+  nextState
 ) {
-  const {intl = {}} = context;
-  const {intl: nextIntl = {}} = nextContext;
-
   return (
     !shallowEquals(nextProps, props) ||
-    !shallowEquals(nextState, state) ||
-    !(
-      nextIntl === intl ||
-      shallowEquals(
-        filterProps(nextIntl, intlConfigPropNames),
-        filterProps(intl, intlConfigPropNames)
-      )
-    )
+    !shallowEquals(nextState, state)
   );
 }
 

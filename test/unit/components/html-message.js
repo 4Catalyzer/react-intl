@@ -1,9 +1,6 @@
-import expect, { createSpy, spyOn } from 'expect'
 import React from 'react'
 import { generateIntlContext, mountWithContext } from '../testUtils'
-import FormattedHTMLMessage, {
-  BaseFormattedHTMLMessage,
-} from '../../../src/components/html-message'
+import FormattedHTMLMessage from '../../../src/components/html-message'
 import { BaseFormattedMessage } from '../../../src/components/message'
 
 describe('<FormattedHTMLMessage>', () => {
@@ -11,7 +8,7 @@ describe('<FormattedHTMLMessage>', () => {
   let intl
 
   beforeEach(() => {
-    consoleError = spyOn(console, 'error')
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
     intl = generateIntlContext({
       locale: 'en',
       defaultLocale: 'en-US',
@@ -19,15 +16,11 @@ describe('<FormattedHTMLMessage>', () => {
   })
 
   afterEach(() => {
-    consoleError.restore()
+    consoleError.mockRestore()
   })
 
   it('has a `displayName`', () => {
-    expect(FormattedHTMLMessage.displayName).toBeA('string')
-  })
-
-  it('extends FormattedMessage', () => {
-    expect(BaseFormattedHTMLMessage.prototype).toBeA(BaseFormattedMessage)
+    expect(typeof BaseFormattedMessage.displayName).toBe('string')
   })
 
   it('renders a formatted HTML message in a <span>', () => {
@@ -42,7 +35,7 @@ describe('<FormattedHTMLMessage>', () => {
     )
 
     expect(rendered.find('span').length).toEqual(1)
-    expect(rendered.prop('dangerouslySetInnerHTML')).toEqual({
+    expect(rendered.find('span').prop('dangerouslySetInnerHTML')).toEqual({
       __html: intl.formatHTMLMessage(descriptor),
     })
   })
@@ -59,7 +52,7 @@ describe('<FormattedHTMLMessage>', () => {
       <FormattedHTMLMessage {...descriptor} values={values} />
     )
 
-    expect(rendered.prop('dangerouslySetInnerHTML').__html).toBe(
+    expect(rendered.find('span').prop('dangerouslySetInnerHTML').__html).toBe(
       intl.formatHTMLMessage(descriptor, values)
     )
   })
@@ -76,7 +69,7 @@ describe('<FormattedHTMLMessage>', () => {
       <FormattedHTMLMessage {...descriptor} values={values} />
     )
 
-    expect(rendered.prop('dangerouslySetInnerHTML').__html).toBe(
+    expect(rendered.find('span').prop('dangerouslySetInnerHTML').__html).toBe(
       'Hello, <b>&lt;i&gt;Eric&lt;/i&gt;</b>!'
     )
   })
@@ -93,7 +86,7 @@ describe('<FormattedHTMLMessage>', () => {
       <FormattedHTMLMessage {...descriptor} tagName={tagName} />
     )
 
-    expect(rendered.type()).toEqual(tagName)
+    expect(rendered.find(tagName)).toHaveLength(1)
   })
 
   it('supports function-as-child pattern', () => {
@@ -102,20 +95,20 @@ describe('<FormattedHTMLMessage>', () => {
       defaultMessage: 'Hello, <b>World</b>!',
     }
 
-    const spy = createSpy().andReturn(<p>Jest</p>)
+    const spy = jest.fn(() => <p>Jest</p>)
     const rendered = mountWithContext(
       intl,
       <FormattedHTMLMessage {...descriptor}>{spy}</FormattedHTMLMessage>
     )
 
-    expect(spy.calls.length).toBe(1)
-    expect(spy.calls[0].arguments).toEqual([intl.formatHTMLMessage(descriptor)])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(intl.formatHTMLMessage(descriptor))
 
-    expect(rendered.find('p').length).toEqual(1)
+    expect(rendered.find('p')).toHaveLength(1)
     expect(rendered.text()).toBe('Jest')
   })
 
-  it.only('does not support rich-text message formatting', () => {
+  it('does not support rich-text message formatting', () => {
     const rendered = mountWithContext(
       intl,
       <FormattedHTMLMessage
@@ -126,7 +119,7 @@ describe('<FormattedHTMLMessage>', () => {
         }}
       />
     )
-    expect(rendered.children().prop('dangerouslySetInnerHTML').__html).toBe(
+    expect(rendered.find('span').prop('dangerouslySetInnerHTML').__html).toBe(
       'Hello, <b>[object Object]</b>!'
     )
   })

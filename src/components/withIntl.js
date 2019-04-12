@@ -1,5 +1,5 @@
 import React from 'react';
-import hostNonReactStatics from 'hoist-non-react-statics'
+import hoistNonReactStatics from 'hoist-non-react-statics';
 
 import useIntl from './useIntl';
 
@@ -8,25 +8,16 @@ function getDisplayName(Component) {
 }
 
 export default function withIntl(WrappedComponent, options = {}) {
-  const {
-    intlPropName = 'intl',
-    enforceContext = true
-  } = options;
-
+  const {intlPropName = 'intl', enforceContext = true} = options;
 
   const withIntl = React.forwardRef((props, ref) => {
-    const intl = useIntl({ enforceContext })
-    return  (
-      <WrappedComponent
-        {...{...props, [intlPropName]: intl }}
-        ref={ref}
-      />
-    );
-  })
+    const intl = useIntl({enforceContext});
+    return <WrappedComponent {...{...props, [intlPropName]: intl}} ref={ref} />;
+  });
 
   withIntl.WrappedComponent = WrappedComponent;
 
   withIntl.displayName = `withIntl(${getDisplayName(WrappedComponent)})`;
 
-  return hostNonReactStatics(withIntl, WrappedComponent);
+  return hoistNonReactStatics(withIntl, WrappedComponent);
 }

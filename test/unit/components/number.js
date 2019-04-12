@@ -1,4 +1,3 @@
-import expect, { createSpy, spyOn } from 'expect'
 import React from 'react'
 import { mount } from 'enzyme'
 import { generateIntlContext, mountWithContext } from '../testUtils'
@@ -9,18 +8,18 @@ describe('<FormattedNumber>', () => {
   let intl
 
   beforeEach(() => {
-    consoleError = spyOn(console, 'error')
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
     intl = generateIntlContext({
       locale: 'en',
     })
   })
 
   afterEach(() => {
-    consoleError.restore()
+    consoleError.mockRestore()
   })
 
   it('has a `displayName`', () => {
-    expect(FormattedNumber.displayName).toBeA('string')
+    expect(typeof FormattedNumber.displayName).toBe('string')
   })
 
   it('throws when <IntlProvider> is missing from ancestry', () => {
@@ -48,7 +47,7 @@ describe('<FormattedNumber>', () => {
   it('should not re-render when props are the same', () => {
     const num = 1000
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withIntlContext = mountWithContext(
       intl,
       <FormattedNumber value={num}>{spy}</FormattedNumber>
@@ -58,13 +57,13 @@ describe('<FormattedNumber>', () => {
       ...withIntlContext.props(),
     })
 
-    expect(spy.calls.length).toBe(1)
+    expect(spy).toHaveBeenCalledTimes(1)
   })
 
   it('should re-render when props change', () => {
     const num = 1000
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withIntlContext = mountWithContext(
       intl,
       <FormattedNumber value={num}>{spy}</FormattedNumber>
@@ -75,13 +74,13 @@ describe('<FormattedNumber>', () => {
       value: num + 1,
     })
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   xit('should re-render when context changes', () => {
     const num = 1000
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withIntlContext = mountWithContext(
       intl,
       <FormattedNumber value={num}>{spy}</FormattedNumber>
@@ -90,7 +89,7 @@ describe('<FormattedNumber>', () => {
     const otherIntl = generateIntlContext({ locale: 'en-US' })
     withIntlContext.instance().mockContext(otherIntl)
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   it('accepts valid Intl.NumberFormat options as props', () => {
@@ -112,7 +111,7 @@ describe('<FormattedNumber>', () => {
     )
 
     expect(rendered.text()).toBe('0')
-    expect(consoleError.calls.length).toBeGreaterThan(0)
+    expect(consoleError).toHaveBeenCalled()
   })
 
   it('accepts `format` prop', () => {
@@ -145,14 +144,14 @@ describe('<FormattedNumber>', () => {
   it('supports function-as-child pattern', () => {
     const num = new Date()
 
-    const spy = createSpy().andReturn(<span>Jest</span>)
+    const spy = jest.fn(() => <span>Jest</span>)
     const rendered = mountWithContext(
       intl,
       <FormattedNumber value={num}>{spy}</FormattedNumber>
     )
 
-    expect(spy.calls.length).toBe(1)
-    expect(spy.calls[0].arguments).toEqual([intl.formatNumber(num)])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(intl.formatNumber(num))
 
     expect(rendered.find('span').length).toEqual(1)
     expect(rendered.text()).toBe('Jest')

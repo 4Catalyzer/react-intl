@@ -4,69 +4,69 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import withIntl from './withIntl'
-import { intlShape, relativeFormatPropTypes } from '../types'
-import { invariantIntlContext, shouldIntlComponentUpdate } from '../utils'
+import React, {PureComponent} from 'react';
+import PropTypes from 'prop-types';
+import withIntl from './withIntl';
+import {intlShape, relativeFormatPropTypes} from '../types';
+import {invariantIntlContext} from '../utils';
 
-const SECOND = 1000
-const MINUTE = 1000 * 60
-const HOUR = 1000 * 60 * 60
-const DAY = 1000 * 60 * 60 * 24
+const SECOND = 1000;
+const MINUTE = 1000 * 60;
+const HOUR = 1000 * 60 * 60;
+const DAY = 1000 * 60 * 60 * 24;
 
 // The maximum timer delay value is a 32-bit signed integer.
 // See: https://mdn.io/setTimeout
-const MAX_TIMER_DELAY = 2147483647
+const MAX_TIMER_DELAY = 2147483647;
 
 function selectUnits(delta) {
-  let absDelta = Math.abs(delta)
+  let absDelta = Math.abs(delta);
 
   if (absDelta < MINUTE) {
-    return 'second'
+    return 'second';
   }
 
   if (absDelta < HOUR) {
-    return 'minute'
+    return 'minute';
   }
 
   if (absDelta < DAY) {
-    return 'hour'
+    return 'hour';
   }
 
   // The maximum scheduled delay will be measured in days since the maximum
   // timer delay is less than the number of milliseconds in 25 days.
-  return 'day'
+  return 'day';
 }
 
 function getUnitDelay(units) {
   switch (units) {
     case 'second':
-      return SECOND
+      return SECOND;
     case 'minute':
-      return MINUTE
+      return MINUTE;
     case 'hour':
-      return HOUR
+      return HOUR;
     case 'day':
-      return DAY
+      return DAY;
     default:
-      return MAX_TIMER_DELAY
+      return MAX_TIMER_DELAY;
   }
 }
 
 function isSameDate(a, b) {
   if (a === b) {
-    return true
+    return true;
   }
 
-  let aTime = new Date(a).getTime()
-  let bTime = new Date(b).getTime()
+  let aTime = new Date(a).getTime();
+  let bTime = new Date(b).getTime();
 
-  return isFinite(aTime) && isFinite(bTime) && aTime === bTime
+  return isFinite(aTime) && isFinite(bTime) && aTime === bTime;
 }
 
-class FormattedRelative extends Component {
-  static displayName = 'FormattedRelative'
+class FormattedRelative extends PureComponent {
+  static displayName = 'FormattedRelative';
 
   static propTypes = {
     ...relativeFormatPropTypes,
@@ -76,98 +76,94 @@ class FormattedRelative extends Component {
     updateInterval: PropTypes.number,
     initialNow: PropTypes.any,
     children: PropTypes.func,
-  }
+  };
 
   static defaultProps = {
     updateInterval: 1000 * 10,
-  }
+  };
 
   constructor(props) {
-    super(props)
-    invariantIntlContext(props)
+    super(props);
+    invariantIntlContext(props);
 
     let now = isFinite(props.initialNow)
       ? Number(props.initialNow)
-      : props.intl.now()
+      : props.intl.now();
 
     // `now` is stored as state so that `render()` remains a function of
     // props + state, instead of accessing `Date.now()` inside `render()`.
-    this.state = { now }
+    this.state = {now};
   }
 
   scheduleNextUpdate(props, state) {
     // Cancel and pending update because we're scheduling a new update.
-    clearTimeout(this._timer)
+    clearTimeout(this._timer);
 
-    const { value, units, updateInterval } = props
-    const time = new Date(value).getTime()
+    const {value, units, updateInterval} = props;
+    const time = new Date(value).getTime();
 
     // If the `updateInterval` is falsy, including `0` or we don't have a
     // valid date, then auto updates have been turned off, so we bail and
     // skip scheduling an update.
     if (!updateInterval || !isFinite(time)) {
-      return
+      return;
     }
 
-    const delta = time - state.now
-    const unitDelay = getUnitDelay(units || selectUnits(delta))
-    const unitRemainder = Math.abs(delta % unitDelay)
+    const delta = time - state.now;
+    const unitDelay = getUnitDelay(units || selectUnits(delta));
+    const unitRemainder = Math.abs(delta % unitDelay);
 
-    // We want the largest possible timer delay which will still display
+    // We want the largest possible timer delay which will stqill display
     // accurate information while reducing unnecessary re-renders. The delay
     // should be until the next "interesting" moment, like a tick from
     // "1 minute ago" to "2 minutes ago" when the delta is 120,000ms.
     const delay =
       delta < 0
         ? Math.max(updateInterval, unitDelay - unitRemainder)
-        : Math.max(updateInterval, unitRemainder)
+        : Math.max(updateInterval, unitRemainder);
 
     this._timer = setTimeout(() => {
-      this.setState({ now: this.props.intl.now() })
-    }, delay)
+      this.setState({now: this.props.intl.now()});
+    }, delay);
   }
 
   componentDidMount() {
-    this.scheduleNextUpdate(this.props, this.state)
+    this.scheduleNextUpdate(this.props, this.state);
   }
 
-  componentWillReceiveProps({ value: nextValue }) {
+  componentWillReceiveProps({value: nextValue}) {
     // When the `props.value` date changes, `state.now` needs to be updated,
     // and the next update can be rescheduled.
     if (!isSameDate(nextValue, this.props.value)) {
-      this.setState({ now: this.props.intl.now() })
+      this.setState({now: this.props.intl.now()});
     }
   }
 
-  shouldComponentUpdate(...next) {
-    return shouldIntlComponentUpdate(this, ...next)
-  }
-
   componentWillUpdate(nextProps, nextState) {
-    this.scheduleNextUpdate(nextProps, nextState)
+    this.scheduleNextUpdate(nextProps, nextState);
   }
 
   componentWillUnmount() {
-    clearTimeout(this._timer)
+    clearTimeout(this._timer);
   }
 
   render() {
-    const { formatRelative, textComponent: Text } = this.props.intl
-    const { value, children } = this.props
+    const {formatRelative, textComponent: Text} = this.props.intl;
+    const {value, children} = this.props;
 
     let formattedRelative = formatRelative(value, {
       ...this.props,
       ...this.state,
-    })
+    });
 
     if (typeof children === 'function') {
-      return children(formattedRelative)
+      return children(formattedRelative);
     }
 
-    return <Text>{formattedRelative}</Text>
+    return <Text>{formattedRelative}</Text>;
   }
 }
 
-export const BaseFormattedRelative = FormattedRelative
+export const BaseFormattedRelative = FormattedRelative;
 
-export default withIntl(FormattedRelative)
+export default withIntl(FormattedRelative);

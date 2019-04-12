@@ -4,23 +4,23 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, { useMemo } from 'react'
-import PropTypes from 'prop-types'
-import useIntl from './useIntl'
-import { intlShape, numberFormatPropTypes } from '../types'
+import React, {useMemo} from 'react';
+import PropTypes from 'prop-types';
+import useIntl from './useIntl';
+import {intlShape, numberFormatPropTypes} from '../types';
 
 function FormattedNumber(props) {
-  const { formatNumber, textComponent: Text } = useIntl()
-  const { value, children } = props
+  const {formatNumber, textComponent: Text} = useIntl();
+  const {value, children} = props;
 
   return useMemo(() => {
-    let formattedNumber = formatNumber(value, props)
+    let formattedNumber = formatNumber(value, props);
 
     if (typeof children === 'function') {
-      return children(formattedNumber)
+      return children(formattedNumber);
     }
 
-    return <Text>{formattedNumber}</Text>
+    return <Text>{formattedNumber}</Text>;
   }, [
     value,
     children,
@@ -34,10 +34,10 @@ function FormattedNumber(props) {
     props.maximumFractionDigits,
     props.minimumSignificantDigits,
     props.maximumSignificantDigits,
-  ])
+  ]);
 }
 
-FormattedNumber.displayName = 'FormattedNumber'
+FormattedNumber.displayName = 'FormattedNumber';
 
 FormattedNumber.propTypes = {
   ...numberFormatPropTypes,
@@ -45,6 +45,6 @@ FormattedNumber.propTypes = {
   value: PropTypes.any.isRequired,
   format: PropTypes.string,
   children: PropTypes.func,
-}
+};
 
-export default FormattedNumber
+export default FormattedNumber;

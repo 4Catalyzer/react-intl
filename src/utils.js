@@ -9,45 +9,43 @@ This source code is licensed under the BSD-style license found in the LICENSE
 file in the root directory of React's source tree.
 */
 
-import invariant from 'invariant'
+import invariant from 'invariant';
 
-const ESCAPED_CHARS = {
-  '&': '&amp;',
-  '>': '&gt;',
-  '<': '&lt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-}
-
-const UNSAFE_CHARS_REGEX = /[&><"']/g
+const UNSAFE_CHARS_REGEX = /[&><"']/g;
 
 export function escape(str) {
-  return ('' + str).replace(UNSAFE_CHARS_REGEX, match => ESCAPED_CHARS[match])
+  return ('' + str).replace(UNSAFE_CHARS_REGEX, match => {
+    if (match === '&') return '&amp;';
+    else if (match === '>') return '&gt;';
+    else if (match === '<') return '&lt;';
+    else if (match === '"') return '&quot;';
+    else if (match === "'") return '&#x27;';
+  });
 }
 
 export function filterProps(props, whitelist, defaults = {}) {
   return whitelist.reduce((filtered, name) => {
     if (props.hasOwnProperty(name)) {
-      filtered[name] = props[name]
+      filtered[name] = props[name];
     } else if (defaults.hasOwnProperty(name)) {
-      filtered[name] = defaults[name]
+      filtered[name] = defaults[name];
     }
 
-    return filtered
-  }, {})
+    return filtered;
+  }, {});
 }
 
-export function invariantIntlContext({ intl } = {}) {
+export function invariantIntlContext({intl} = {}) {
   invariant(
     intl,
     '[React Intl] Could not find required `intl` object. ' +
       '<IntlProvider> needs to exist in the component ancestry.'
-  )
+  );
 }
 
 export function shallowEquals(objA, objB) {
   if (objA === objB) {
-    return true
+    return true;
   }
 
   if (
@@ -56,42 +54,34 @@ export function shallowEquals(objA, objB) {
     typeof objB !== 'object' ||
     objB === null
   ) {
-    return false
+    return false;
   }
 
-  let keysA = Object.keys(objA)
-  let keysB = Object.keys(objB)
+  let keysA = Object.keys(objA);
+  let keysB = Object.keys(objB);
 
   if (keysA.length !== keysB.length) {
-    return false
+    return false;
   }
 
   // Test for A's keys different from B.
-  let bHasOwnProperty = Object.prototype.hasOwnProperty.bind(objB)
+  let bHasOwnProperty = Object.prototype.hasOwnProperty.bind(objB);
   for (let i = 0; i < keysA.length; i++) {
     if (!bHasOwnProperty(keysA[i]) || objA[keysA[i]] !== objB[keysA[i]]) {
-      return false
+      return false;
     }
   }
 
-  return true
-}
-
-export function shouldIntlComponentUpdate(
-  { props, state },
-  nextProps,
-  nextState
-) {
-  return !shallowEquals(nextProps, props) || !shallowEquals(nextState, state)
+  return true;
 }
 
 export function createError(message, exception) {
-  const eMsg = exception ? `\n${exception}` : ''
-  return `[React Intl] ${message}${eMsg}`
+  const eMsg = exception ? `\n${exception}` : '';
+  return `[React Intl] ${message}${eMsg}`;
 }
 
 export function defaultErrorHandler(error) {
   if (process.env.NODE_ENV !== 'production') {
-    console.error(error)
+    console.error(error);
   }
 }

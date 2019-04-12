@@ -1,520 +1,430 @@
-import expect, {createSpy, spyOn} from 'expect';
-import React from 'react';
-import {mount} from 'enzyme';
-import {makeMockContext, shallowDeep, SpyComponent} from '../testUtils'
-import {intlConfigPropTypes, intlFormatPropTypes} from '../../../src/types';
-import IntlProvider from '../../../src/components/provider';
+import React from 'react'
+import { mount } from 'enzyme'
+import { mountWithContext, SpyComponent } from '../testUtils'
+import { intlConfigPropTypes, intlFormatPropTypes } from '../../../src/types'
+import IntlProvider from '../../../src/components/provider'
+import useIntl from '../../../src/components/useIntl'
 
 const skipWhen = (shouldSkip, callback) => {
-    if (shouldSkip) {
-        callback(it.skip);
-    } else {
-        callback(it);
-    }
-};
+  if (shouldSkip) {
+    callback(it.skip)
+  } else {
+    callback(it)
+  }
+}
 
-const mockContext = makeMockContext(
-  require.resolve('../../../src/components/provider')
-);
-
-const getIntlContext = (el) => {
-  const provider = shallowDeep(el, 2).first();
-  return provider.prop('value');
+const getIntlContext = props => {
+  let intl
+  const Child = () => {
+    intl = useIntl()
+    return null
+  }
+  mount(
+    <IntlProvider {...props}>
+      <Child />
+    </IntlProvider>
+  ).unmount()
+  return intl
 }
 
 describe('<IntlProvider>', () => {
-    let immutableIntl = false;
-    try {
-        global.Intl = global.Intl;
-    } catch (e) {
-        immutableIntl = true;
+  let immutableIntl = false
+  try {
+    global.Intl = global.Intl
+  } catch (e) {
+    immutableIntl = true
+  }
+
+  const now = Date.now()
+
+  const INTL = global.Intl
+
+  const INTL_CONFIG_PROP_NAMES = Object.keys(intlConfigPropTypes)
+  const INTL_FORMAT_PROP_NAMES = Object.keys(intlFormatPropTypes)
+
+  const INTL_SHAPE_PROP_NAMES = [
+    ...INTL_CONFIG_PROP_NAMES,
+    ...INTL_FORMAT_PROP_NAMES,
+    'now',
+  ]
+
+  const Child = () => null
+
+  let consoleError
+  let dateNow
+
+  beforeEach(() => {
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+    dateNow = jest.spyOn(Date, 'now').mockImplementation(() => now)
+  })
+
+  afterEach(() => {
+    if (!immutableIntl) {
+      global.Intl = INTL
     }
 
-    const now = Date.now();
+    consoleError.mockRestore()
+    dateNow.mockRestore()
+  })
 
-    const INTL = global.Intl;
+  it('has a `displayName`', () => {
+    expect(typeof IntlProvider.displayName).toBe('string')
+  })
 
-    const INTL_CONFIG_PROP_NAMES = Object.keys(intlConfigPropTypes);
-    const INTL_FORMAT_PROP_NAMES = Object.keys(intlFormatPropTypes);
+  // If global.Intl is immutable, then skip this test.
+  skipWhen(immutableIntl, it => {
+    it('throws when `Intl` is missing from runtime', () => {
+      global.Intl = undefined
 
-    const INTL_SHAPE_PROP_NAMES = [
-        ...INTL_CONFIG_PROP_NAMES,
-        ...INTL_FORMAT_PROP_NAMES,
-        'now',
-    ];
+      expect(() => mount(<IntlProvider />)).toThrow(
+        '[React Intl] The `Intl` APIs must be available in the runtime, and do not appear to be built-in. An `Intl` polyfill should be loaded.'
+      )
+    })
+  })
 
-    const Child = () => null;
+  it('warns when no `locale` prop is provided', () => {
+    mount(
+      <IntlProvider>
+        <Child />
+      </IntlProvider>
+    )
+    expect(consoleError).toHaveBeenCalledTimes(1)
 
-    let consoleError;
-    let dateNow;
+    expect(consoleError.mock.calls[0][0]).toContain(
+      '[React Intl] Missing locale data for locale: "undefined". Using default locale: "en" as fallback.'
+    )
+  })
 
-    beforeEach(() => {
-        consoleError       = spyOn(console, 'error');
-        dateNow            = spyOn(Date, 'now').andReturn(now);
-    });
+  it('warns when `locale` prop provided has no locale data', () => {
+    const el = (
+      <IntlProvider locale="missing">
+        <Child />
+      </IntlProvider>
+    )
 
-    afterEach(() => {
-        if (!immutableIntl) {
-            global.Intl = INTL;
-        }
+    const { locale } = el.props
 
-        consoleError.restore();
-        dateNow.restore();
-    });
+    mount(el)
+    expect(consoleError).toHaveBeenCalledTimes(1)
+    expect(consoleError.mock.calls[0][0]).toContain(
+      `[React Intl] Missing locale data for locale: "${locale}". Using default locale: "en" as fallback.`
+    )
+  })
 
-    it('has a `displayName`', () => {
-        expect(IntlProvider.displayName).toBeA('string');
-    });
+  it('renders its `children`', () => {
+    const el = (
+      <IntlProvider locale="en">
+        <Child />
+      </IntlProvider>
+    )
 
-    // If global.Intl is immutable, then skip this test.
-    skipWhen(immutableIntl, (it) => {
-        it('throws when `Intl` is missing from runtime', () => {
-            const IntlProvider = mockContext();
-            global.Intl = undefined;
+    const rendered = mount(el)
+    expect(rendered.children().length).toBe(1)
+    expect(rendered.children().contains(<Child />)).toBe(true)
+  })
 
-            expect(() => shallowDeep(<IntlProvider />, 2)).toThrow(
-                '[React Intl] The `Intl` APIs must be available in the runtime, and do not appear to be built-in. An `Intl` polyfill should be loaded.'
-            );
-        });
-    });
+  it('provides `context.intl` with `intlShape` props', () => {
+    const el = (
+      <IntlProvider locale="en">
+        <Child />
+      </IntlProvider>
+    )
 
-    it('throws when no `children`', () => {
-        const IntlProvider = mockContext();
+    const intl = getIntlContext(el)
 
-        expect(() => shallowDeep(<IntlProvider />, 2)).toThrow();
-    });
+    INTL_SHAPE_PROP_NAMES.forEach(propName => {
+      expect(intl[propName]).not.toBe(
+        undefined,
+        `Missing context.intl prop: ${propName}`
+      )
+    })
+  })
 
-    it('throws when more than one `children`', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider>
-                <Child />
-                <Child />
-            </IntlProvider>
-        );
+  it('provides `context.intl` with values from intl config props', () => {
+    const props = {
+      locale: 'fr-FR',
+      timeZone: 'UTC',
+      formats: {},
+      messages: {},
+      textComponent: 'span',
 
-        expect(() => shallowDeep(el, 2)).toThrow();
-    });
+      defaultLocale: 'en-US',
+      defaultFormats: {},
 
-    it('warns when no `locale` prop is provided', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider>
-                <Child />
-            </IntlProvider>
-        );
+      onError: consoleError,
+    }
 
-        shallowDeep(el, 2);
-        expect(consoleError.calls.length).toBe(1);
-        expect(consoleError.calls[0].arguments[0]).toContain(
-            '[React Intl] Missing locale data for locale: "undefined". Using default locale: "en" as fallback.'
-        );
-    });
+    const intl = getIntlContext(props)
 
-    it('warns when `locale` prop provided has no locale data', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider locale="missing">
-                <Child />
-            </IntlProvider>
-        );
+    INTL_CONFIG_PROP_NAMES.forEach(propName => {
+      expect(intl[propName]).toBe(props[propName])
+    })
+  })
 
-        const {locale} = el.props;
+  it('provides `context.intl` with timeZone from intl config props when it is specified', () => {
+    const props = {
+      timeZone: 'Europe/Paris',
+    }
+    let intl
+    const Child = () => {
+      intl = useIntl()
+      return null
+    }
 
-        shallowDeep(el, 2);
-        expect(consoleError.calls.length).toBe(1);
-        expect(consoleError.calls[0].arguments[0]).toContain(
-            `[React Intl] Missing locale data for locale: "${locale}". Using default locale: "en" as fallback.`
-        );
-    });
+    mount(
+      <IntlProvider {...props}>
+        <Child />
+      </IntlProvider>
+    )
+    expect(intl.timeZone).toBe('Europe/Paris')
+  })
 
-    it('renders its `children`', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider locale="en">
-                <Child />
-            </IntlProvider>
-        );
+  it('provides `context.intl` with values from `defaultProps` for missing or undefined props', () => {
+    const props = {
+      locale: 'en-US',
+      defaultLocale: undefined,
+    }
 
-        const rendered = shallowDeep(el, 2);
-        expect(rendered.children().length).toBe(1);
-        expect(rendered.children().contains(<Child />)).toBe(true);
-    });
+    let intl
+    const Child = () => {
+      intl = useIntl()
+      return null
+    }
 
-    it('provides `context.intl` with `intlShape` props', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider locale="en">
-                <Child />
-            </IntlProvider>
-        );
+    mount(
+      <IntlProvider {...props}>
+        <Child />
+      </IntlProvider>
+    )
 
-        const intl = getIntlContext(el);
+    expect(intl.defaultLocale).not.toBe(undefined)
+    expect(intl.defaultLocale).toBe('en')
+    expect(intl.messages).not.toBe(undefined)
+    expect(typeof intl.messages).toBe('object')
+  })
 
-        INTL_SHAPE_PROP_NAMES.forEach((propName) => {
-            expect(intl[propName]).toNotBe(undefined, `Missing context.intl prop: ${propName}`);
-        });
-    });
+  it('provides `context.intl` with format methods bound to intl config props', () => {
+    let intl
+    const Child = () => {
+      intl = useIntl()
+      return null
+    }
 
-    it('provides `context.intl` with values from intl config props', () => {
-        const IntlProvider = mockContext();
-        const props = {
-            locale       : 'fr-FR',
-            timeZone     : 'UTC',
-            formats      : {},
-            messages     : {},
-            textComponent: 'span',
-
-            defaultLocale : 'en-US',
-            defaultFormats: {},
-
-            onError: consoleError
-        };
-
-        const el = (
-            <IntlProvider {...props}>
-                <Child />
-            </IntlProvider>
-        );
-
-        const intl = getIntlContext(el);
-
-        INTL_CONFIG_PROP_NAMES.forEach((propName) => {
-            expect(intl[propName]).toBe(props[propName]);
-        });
-    });
-
-    it('provides `context.intl` with timeZone from intl config props when it is specified', () => {
-        const IntlProvider = mockContext();
-        const props = {
-            timeZone: 'Europe/Paris',
-        };
-
-        const el = (
-            <IntlProvider {...props}>
-                <Child />
-            </IntlProvider>
-        );
-
-        const intl = getIntlContext(el);
-
-        expect(intl.timeZone).toBe('Europe/Paris');
-    });
-
-    it('provides `context.intl` with values from `defaultProps` for missing or undefined props', () => {
-        const IntlProvider = mockContext();
-        const props = {
-            locale: 'en-US',
-            defaultLocale: undefined,
-        };
-
-        const el = (
-            <IntlProvider {...props}>
-                <Child />
-            </IntlProvider>
-        );
-
-        const intl = getIntlContext(el);
-
-        expect(intl.defaultLocale).toNotBe(undefined);
-        expect(intl.defaultLocale).toBe('en');
-        expect(intl.messages).toNotBe(undefined);
-        expect(intl.messages).toBeAn('object');
-    });
-
-    it('provides `context.intl` with format methods bound to intl config props', () => {
-        const IntlProvider = mockContext();
-        const el = (
-            <IntlProvider
-                locale="en"
-                formats={{
-                    date: {
-                        'year-only': {
-                            year: 'numeric'
-                        }
-                    }
-                }}
-            >
-                <Child />
-            </IntlProvider>
-        );
-
-        const intl = getIntlContext(el);
-
-        INTL_FORMAT_PROP_NAMES.forEach((propName) => {
-            expect(intl[propName]).toExist(`Missing context.intl prop: ${propName}`);
-            expect(intl[propName]).toBeA('function');
-        });
-
-        const date = new Date();
-        const df   = new Intl.DateTimeFormat('en', {year: 'numeric'});
-
-        expect(intl.formatDate(date, {format: 'year-only'})).toBe(df.format(date));
-    });
-
-    it('inherits from an <IntlProvider> ancestor', () => {
-        let IntlProvider = mockContext();
-        const props = {
-            locale  : 'en',
-            timeZone: 'UTC',
-            formats : {
-                date: {
-                    'year-only': {
-                        year: 'numeric',
-                    },
-                },
+    mount(
+      <IntlProvider
+        locale="en"
+        formats={{
+          date: {
+            'year-only': {
+              year: 'numeric',
             },
-            messages: {
-                hello: 'Hello, World!',
-            },
-            textComponent: 'span',
+          },
+        }}
+      >
+        <Child />
+      </IntlProvider>
+    )
 
-            defaultLocale : 'fr',
-            defaultFormats: {
-                date: {
-                    'year-only': {
-                        year: 'numeric',
-                    },
-                },
-            },
+    INTL_FORMAT_PROP_NAMES.forEach(propName => {
+      expect(intl[propName]).not.toBeNull()
+      expect(typeof intl[propName]).toBe('function')
+    })
 
-            onError: consoleError
-        };
+    const date = new Date()
+    const df = new Intl.DateTimeFormat('en', { year: 'numeric' })
 
-        const parentContext = getIntlContext(
-          <IntlProvider {...props}>
+    expect(intl.formatDate(date, { format: 'year-only' })).toBe(df.format(date))
+  })
+
+  it('inherits from an <IntlProvider> ancestor', () => {
+    const props = {
+      locale: 'en',
+      timeZone: 'UTC',
+      formats: {
+        date: {
+          'year-only': {
+            year: 'numeric',
+          },
+        },
+      },
+      messages: {
+        hello: 'Hello, World!',
+      },
+      textComponent: 'span',
+
+      defaultLocale: 'fr',
+      defaultFormats: {
+        date: {
+          'year-only': {
+            year: 'numeric',
+          },
+        },
+      },
+
+      onError: consoleError,
+    }
+
+    let intl
+    const Child = () => {
+      intl = useIntl()
+      return null
+    }
+
+    mount(
+      <IntlProvider {...props}>
+        <div>
+          <IntlProvider>
             <Child />
           </IntlProvider>
-        );
+        </div>
+      </IntlProvider>
+    )
 
-        IntlProvider = mockContext(parentContext);
-        const el = (
-            <IntlProvider>
-                <Child />
-            </IntlProvider>
-        );
+    expect(consoleError).not.toHaveBeenCalled()
 
-        const intl = getIntlContext(el);
+    INTL_CONFIG_PROP_NAMES.forEach(propName => {
+      expect(intl[propName]).toEqual(props[propName])
+    })
+  })
 
-        expect(consoleError.calls.length).toBe(0);
+  it('shadows inherited intl config props from an <IntlProvider> ancestor', () => {
+    const props = {
+      locale: 'en',
+      timeZone: 'Australia/Adelaide',
+      formats: {
+        date: {
+          'year-only': {
+            year: 'numeric',
+          },
+        },
+      },
+      messages: {
+        hello: 'Hello, World!',
+      },
 
-        INTL_CONFIG_PROP_NAMES.forEach((propName) => {
-            expect(intl[propName]).toBe(props[propName]);
-        });
-    });
+      defaultLocale: 'fr',
+      defaultFormats: {
+        date: {
+          'year-only': {
+            year: 'numeric',
+          },
+        },
+      },
+    }
 
-    it('shadows inherited intl config props from an <IntlProvider> ancestor', () => {
-        let IntlProvider = mockContext()
-        const props = {
-            locale  : 'en',
-            timeZone  : 'Australia/Adelaide',
-            formats : {
-                date: {
-                    'year-only': {
-                        year: 'numeric',
-                    },
-                },
-            },
-            messages: {
-                hello: 'Hello, World!',
-            },
+    let intl
+    const Child = () => {
+      intl = useIntl()
+      return null
+    }
 
-            defaultLocale : 'fr',
-            defaultFormats: {
-                date: {
-                    'year-only': {
-                        year: 'numeric',
-                    },
-                },
-            },
-        };
-
-        const parentContext = getIntlContext(
-          <IntlProvider {...props}>
-            <Child />
-          </IntlProvider>
-        );
-
-        IntlProvider = mockContext(parentContext);
-        const el = (
-            <IntlProvider
-                locale="fr"
-                timeZone="Atlantic/Azores"
-                formats={{}}
-                messages={{}}
-                defaultLocale="en"
-                defaultFormats={{}}
-                textComponent="span"
-            >
-                <Child />
-            </IntlProvider>
-        );
-
-        const intl = getIntlContext(el);
-
-        expect(consoleError.calls.length).toBe(0);
-
-        INTL_CONFIG_PROP_NAMES.forEach((propName) => {
-            expect(intl[propName]).toNotBe(props[propName]);
-        });
-    });
-
-    it('should not re-render when props and context are the same', () => {
-        let IntlProvider = mockContext()
-        const parentContext = getIntlContext(
-          <IntlProvider locale='en'>
-            <Child />
-          </IntlProvider>
-        );
-
-        IntlProvider = mockContext(parentContext);
-        const el = (
-            <IntlProvider>
-                <SpyComponent />
-            </IntlProvider>
-        );
-
-        const intlProvider = mount(el);
-        intlProvider.setProps({}); // set props in order to test wether it rerenders
-
-        const spy = intlProvider.find(SpyComponent).instance();
-        expect(spy.getRenderCount()).toBe(1);
-    });
-
-    it('should re-render when props change', () => {
-        let IntlProvider = mockContext()
-        const parentContext = getIntlContext(
-          <IntlProvider locale='en'>
-            <Child />
-          </IntlProvider>
-        );
-
-        IntlProvider = mockContext(parentContext);
-        const Child = createSpy().andReturn(null);
-
-        const intlProvider = mount(
-            <IntlProvider locale="en">
-                <SpyComponent />
-            </IntlProvider>
-        );
-        intlProvider.setProps({
-          locale: 'en-US'
-        })
-
-        const spy = intlProvider.find(SpyComponent).instance();
-        expect(spy.getRenderCount()).toBe(2);
-    });
-
-    // it('should re-render when context changes', () => {
-    //     let IntlProvider = mockContext()
-    //     const initialParentContext = getIntlContext(
-    //       <IntlProvider locale='en'>
-    //         <Child />
-    //       </IntlProvider>
-    //     );
-    //     const changedParentContext = getIntlContext(
-    //       <IntlProvider locale='en-US'>
-    //         <Child />
-    //       </IntlProvider>
-    //     );
-
-    //     IntlProvider = mockContext(initialParentContext);
-    //     const Child = createSpy().andReturn(null);
-
-    //     const el = (
-    //         <IntlProvider>
-    //             <SpyComponent />
-    //         </IntlProvider>
-    //     );
-
-    //     const intlProvider = mount(el);
-    //     intlProvider.instance().mockContext(changedParentContext);
-
-    //     const spy = intlProvider.find(SpyComponent).instance();
-    //     expect(spy.getRenderCount()).toBe(2);
-    // });
-
-    it('accepts `initialNow` prop', () => {
-        const IntlProvider = mockContext();
-        const initialNow = 1234;
-
-        // doing this to get the actual "now" at render time
-        const Child = ({ intl }) => ( // mocked provider injects context as 'intl' into children
-          <div>
-            { intl.now() }
-          </div>
-        )
-
-        const el = (
-            <IntlProvider
-                locale="en"
-                initialNow={initialNow}
-            >
-                <Child />
-            </IntlProvider>
-        );
-
-        // can't do shallow rendering as this first mounts the Provider and then the children, bypassing initialNow
-        const now = +mount(el).find(Child).text();
-        expect(now).toBe(initialNow);
-    });
-
-    it('defaults `initialNow` to `Date.now()`', () => {
-        const IntlProvider = mockContext();
-        const Child = ({ intl }) => ( // see above
-          <div>
-            { intl.now() }
-          </div>
-        )
-
-        const el = (
-            <IntlProvider
-                locale="en"
-            >
-                <Child />
-            </IntlProvider>
-        );
-
-        const now = +mount(el).find(Child).text(); // see above
-        expect(now).toBe(now);
-    });
-
-    it('inherits `initialNow` from an <IntlProvider> ancestor', () => {
-        const initialNow = 1234;
-        const IntlProvider = mockContext({
-          now: () => initialNow
-        });
-
-        // see above
-        const Child = ({ intl }) => (
-          <div>
-            { intl.now() }
-          </div>
-        )
-
-        const el = (
-            <IntlProvider locale="en">
-                <Child />
-            </IntlProvider>
-        );
-
-        const now = +mount(el).find(Child).text(); // see above
-        expect(now).toBe(initialNow);
-    });
-
-    it('updates `now()` to return the current date when mounted', () => {
-        const IntlProvider = mockContext();
-        const initialNow = 1234;
-
-        const intl = getIntlContext(
+    mount(
+      <IntlProvider {...props}>
+        <div>
           <IntlProvider
-              locale="en"
-              initialNow={initialNow}
+            locale="fr"
+            timeZone="Atlantic/Azores"
+            formats={{}}
+            messages={{}}
+            defaultLocale="en"
+            defaultFormats={{}}
+            textComponent="span"
           >
-              <Child />
+            <Child />
           </IntlProvider>
-        )
+        </div>
+      </IntlProvider>
+    )
 
-        expect(intl.now()).toBe(now)
-    });
-});
+    expect(consoleError).not.toHaveBeenCalled()
+
+    INTL_CONFIG_PROP_NAMES.forEach(propName => {
+      expect(intl[propName]).not.toBe(props[propName])
+    })
+  })
+
+  it('should re-render when props change', () => {
+    function Wrapper(props) {
+      return (
+        <IntlProvider {...props}>
+          <SpyComponent />
+        </IntlProvider>
+      )
+    }
+    const intlProvider = mount(<Wrapper locale="en" />)
+
+    intlProvider.setProps({
+      locale: 'en-US',
+    })
+
+    const spy = intlProvider.find(SpyComponent).instance()
+    expect(spy.getRenderCount()).toBe(2)
+  })
+
+  it('accepts `initialNow` prop', () => {
+    const initialNow = 1234
+
+    // doing this to get the actual "now" at render time
+    const Child = () => {
+      const intl = useIntl()
+      return <div>{intl.now()}</div>
+    }
+
+    const now = +mount(
+      <IntlProvider locale="en" initialNow={initialNow}>
+        <Child />
+      </IntlProvider>
+    )
+      .find(Child)
+      .text()
+
+    expect(now).toBe(initialNow)
+  })
+
+  it('defaults `initialNow` to `Date.now()`', () => {
+    const dateNow = Date.now()
+    const Child = () => {
+      const intl = useIntl()
+      return <div>{intl.now()}</div>
+    }
+
+    const now = +mount(
+      <IntlProvider locale="en">
+        <Child />
+      </IntlProvider>
+    )
+      .find(Child)
+      .text() // see above
+    expect(now).toBe(dateNow)
+  })
+
+  it('inherits `initialNow` from an <IntlProvider> ancestor', () => {
+    const initialNow = 1234
+    const intl = {
+      now: () => initialNow,
+    }
+
+    const Child = () => {
+      const intl = useIntl()
+      return <div>{intl.now()}</div>
+    }
+
+    const now = +mountWithContext(
+      intl,
+      <IntlProvider locale="en">
+        <Child />
+      </IntlProvider>
+    )
+      .find(Child)
+      .text() // see above
+    expect(now).toBe(initialNow)
+  })
+
+  it('updates `now()` to return the current date when mounted', () => {
+    const initialNow = 1234
+
+    const intl = getIntlContext({ locale: 'en', initialNow })
+
+    expect(intl.now()).toBe(now)
+  })
+})

@@ -4,28 +4,28 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, { useMemo } from 'react'
-import PropTypes from 'prop-types'
-import useIntl from './useIntl'
-import { intlShape, pluralFormatPropTypes } from '../types'
+import React, {useMemo} from 'react';
+import PropTypes from 'prop-types';
+import useIntl from './useIntl';
+import {intlShape, pluralFormatPropTypes} from '../types';
 
 function FormattedPlural(props) {
-  const { formatPlural, textComponent: Text } = useIntl()
-  const { value, other, children } = props
+  const {formatPlural, textComponent: Text} = useIntl();
+  const {value, other, children} = props;
 
   return useMemo(() => {
-    let pluralCategory = formatPlural(value, props)
-    let formattedPlural = props[pluralCategory] || other
+    let pluralCategory = formatPlural(value, props);
+    let formattedPlural = props[pluralCategory] || other;
 
     if (typeof children === 'function') {
-      return children(formattedPlural)
+      return children(formattedPlural);
     }
 
-    return <Text>{formattedPlural}</Text>
-  }, [value, other, children, props.style])
+    return <Text>{formattedPlural}</Text>;
+  }, [value, other, children, props.style]);
 }
 
-FormattedPlural.displayName = 'FormattedPlural'
+FormattedPlural.displayName = 'FormattedPlural';
 
 FormattedPlural.propTypes = {
   ...pluralFormatPropTypes,
@@ -40,10 +40,10 @@ FormattedPlural.propTypes = {
   many: PropTypes.node,
 
   children: PropTypes.func,
-}
+};
 
 FormattedPlural.defaultProps = {
   style: 'cardinal',
-}
+};
 
-export default FormattedPlural
+export default FormattedPlural;

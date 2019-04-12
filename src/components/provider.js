@@ -4,23 +4,16 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, {Component, Children} from 'react';
+import React, {useMemo, useEffect, useRef, useState} from 'react';
 import PropTypes from 'prop-types';
 
-import {Provider} from './useIntl';
-import withIntl from './withIntl';
+import useIntl, {Provider} from './useIntl';
 import IntlMessageFormat from 'intl-messageformat';
 import IntlRelativeFormat from 'intl-relativeformat';
 import IntlPluralFormat from '../plural';
 import memoizeIntlConstructor from 'intl-format-cache';
 import invariant from 'invariant';
-import {
-  createError,
-  defaultErrorHandler,
-  shouldIntlComponentUpdate,
-  filterProps,
-  shallowEquals
-} from '../utils';
+import {createError, defaultErrorHandler, filterProps} from '../utils';
 import {intlConfigPropTypes, intlFormatPropTypes} from '../types';
 import * as format from '../format';
 import {hasLocaleData} from '../locale-data-registry';
@@ -43,7 +36,7 @@ const defaultProps = {
 };
 
 function getConfig(filteredProps) {
-  let config = { ...filteredProps };
+  let config = {...filteredProps};
 
   // Apply default props. This must be applied last after the props have
   // been resolved and inherited from any <IntlProvider> in the ancestry.
@@ -73,7 +66,7 @@ function getConfig(filteredProps) {
       ...config,
       locale: defaultLocale,
       formats: defaultFormats,
-      messages: defaultProps.messages
+      messages: defaultProps.messages,
     };
   }
 
@@ -81,7 +74,7 @@ function getConfig(filteredProps) {
 }
 
 function getBoundFormatFns(config, state) {
-  const formatterState = { ...state.context.formatters, now: state.context.now }
+  const formatterState = {...state.formatters, now: state.now};
 
   return intlFormatPropNames.reduce((boundFormatFns, name) => {
     boundFormatFns[name] = format[name].bind(null, config, formatterState);
@@ -89,29 +82,26 @@ function getBoundFormatFns(config, state) {
   }, {});
 }
 
-class IntlProvider extends Component {
-  static displayName = 'IntlProvider';
+IntlProvider.displayName = 'IntlProvider';
 
-  static propTypes = {
-    ...intlConfigPropTypes,
-    children: PropTypes.element.isRequired,
-    initialNow: PropTypes.any,
-  };
+IntlProvider.propTypes = {
+  ...intlConfigPropTypes,
+  children: PropTypes.element.isRequired,
+  initialNow: PropTypes.any,
+};
 
-  constructor(props) {
-    super(props);
+function useDidMount() {
+  const didMount = useRef(false);
+  useEffect(() => {
+    didMount.current = true;
+  }, []);
+  return () => didMount.current;
+}
 
-    invariant(
-      typeof Intl !== 'undefined',
-      '[React Intl] The `Intl` APIs must be available in the runtime, ' +
-        'and do not appear to be built-in. An `Intl` polyfill should be loaded.\n' +
-        'See: http://formatjs.io/guides/runtime-environments/'
-    );
+function useProviderState(props, intl) {
+  const isMounted = useDidMount();
 
-    const {intl: intlContext} = props;
-
-    // Used to stabilize time when performing an initial rendering so that
-    // all relative times use the same reference "now" time.
+  return useState(() => {
     let initialNow;
     if (isFinite(props.initialNow)) {
       initialNow = Number(props.initialNow);
@@ -119,7 +109,7 @@ class IntlProvider extends Component {
       // When an `initialNow` isn't provided via `props`, look to see an
       // <IntlProvider> exists in the ancestry and call its `now()`
       // function to propagate its value for "now".
-      initialNow = intlContext ? intlContext.now() : Date.now();
+      initialNow = intl ? intl.now() : Date.now();
     }
 
     // Creating `Intl*` formatters is expensive. If there's a parent
@@ -134,64 +124,57 @@ class IntlProvider extends Component {
         getRelativeFormat: memoizeIntlConstructor(IntlRelativeFormat),
         getPluralFormat: memoizeIntlConstructor(IntlPluralFormat),
       },
-    } = (intlContext || {});
+    } = intl || {};
 
-    this.state = {
-      context: {
-        formatters,
+    return {
+      formatters,
 
-        // Wrapper to provide stable "now" time for initial render.
-        now: () => {
-          return this._didDisplay ? Date.now() : initialNow;
-        },
-      }
+      // Wrapper to provide stable "now" time for initial render.
+      now: () => {
+        return isMounted() ? Date.now() : initialNow;
+      },
     };
-  }
-
-  static getDerivedStateFromProps(nextProps, prevState) {
-    const { intl: intlContext } = nextProps;
-
-    // Build a whitelisted config object from `props`, defaults, and
-    // `props.intl`, if an <IntlProvider> exists in the ancestry.
-    const filteredProps = filterProps(nextProps, intlConfigPropNames, intlContext || {});
-
-    if (!shallowEquals(filteredProps, prevState.filteredProps)) {
-      const config = getConfig(filteredProps);
-      const boundFormatFns = getBoundFormatFns(config, prevState);
-
-      return {
-        filteredProps,
-        context: {
-          ...prevState.context,
-          ...config,
-          ...boundFormatFns
-        }
-      };
-    }
-
-    return null;
-  }
-
-  getContext() {
-    return this.state.context;
-  }
-
-  shouldComponentUpdate(...next) {
-    return shouldIntlComponentUpdate(this, ...next);
-  }
-
-  componentDidMount() {
-    this._didDisplay = true;
-  }
-
-  render() {
-    return (
-      <Provider value={this.getContext()}>
-        { Children.only(this.props.children) }
-      </Provider>
-    );
-  }
+  });
 }
 
+export default function IntlProvider(props) {
+  invariant(
+    typeof Intl !== 'undefined',
+    '[React Intl] The `Intl` APIs must be available in the runtime, ' +
+      'and do not appear to be built-in. An `Intl` polyfill should be loaded.\n' +
+      'See: http://formatjs.io/guides/runtime-environments/'
+  );
 
-export default withIntl(IntlProvider, { enforceContext: false }); // to be able to inherit values from parent providers
+  const intl = useIntl({enforceContext: false});
+
+  const [state] = useProviderState(props, intl);
+
+  // Build a whitelisted config object from `props`, defaults, and
+  // `props.intl`, if an <IntlProvider> exists in the ancestry.
+  const filteredProps = useMemo(
+    () => filterProps(props, intlConfigPropNames, intl || {}),
+    [
+      props.locale,
+      props.timeZone,
+      props.formats,
+      props.messages,
+      props.textComponent,
+      props.defaultLocale,
+      props.defaultFormats,
+      props.onError,
+    ]
+  );
+
+  const context = useMemo(() => {
+    const config = getConfig(filteredProps);
+    const boundFormatFns = getBoundFormatFns(config, state);
+
+    return {
+      ...state,
+      ...config,
+      ...boundFormatFns,
+    };
+  }, [state, filterProps]);
+
+  return <Provider value={context}>{props.children}</Provider>;
+}

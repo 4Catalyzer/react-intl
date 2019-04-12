@@ -1,4 +1,3 @@
-import expect, { createSpy, spyOn } from 'expect'
 import React from 'react'
 import { mount } from 'enzyme'
 import { generateIntlContext, mountWithContext } from '../testUtils'
@@ -9,18 +8,18 @@ describe('<FormattedPlural>', () => {
   let intl
 
   beforeEach(() => {
-    consoleError = spyOn(console, 'error')
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
     intl = generateIntlContext({
       locale: 'en',
     })
   })
 
   afterEach(() => {
-    consoleError.restore()
+    consoleError.mockRestore()
   })
 
   it('has a `displayName`', () => {
-    expect(FormattedPlural.displayName).toBeA('string')
+    expect(typeof FormattedPlural.displayName).toBe('string')
   })
 
   it('throws when <IntlProvider> is missing from ancestry', () => {
@@ -64,7 +63,7 @@ describe('<FormattedPlural>', () => {
   })
 
   it('should not re-render when props are the same', () => {
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mountWithContext(
       intl,
       <FormattedPlural value={1} one="foo" other="bar">
@@ -76,11 +75,11 @@ describe('<FormattedPlural>', () => {
       ...withInlContext.props(),
     })
 
-    expect(spy.calls.length).toBe(1)
+    expect(spy).toHaveBeenCalledTimes(1)
   })
 
   it('should re-render when props change', () => {
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mountWithContext(
       intl,
       <FormattedPlural value={0} one="foo" other="bar">
@@ -93,11 +92,11 @@ describe('<FormattedPlural>', () => {
       value: withInlContext.prop('value') + 1,
     })
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   xit('should re-render when context changes', () => {
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mount(
       <FormattedPlural value={0} one="foo" other="bar">
         {spy}
@@ -109,7 +108,7 @@ describe('<FormattedPlural>', () => {
     })
     withInlContext.instance().mockContext(otherIntl)
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   it('accepts valid IntlPluralFormat options as props', () => {
@@ -130,7 +129,7 @@ describe('<FormattedPlural>', () => {
     const props = { one: 'foo' }
     const num = 1
 
-    const spy = createSpy().andReturn(<b>Jest</b>)
+    const spy = jest.fn(() => <b>Jest</b>)
     const rendered = mountWithContext(
       intl,
       <FormattedPlural {...props} value={num}>
@@ -138,8 +137,8 @@ describe('<FormattedPlural>', () => {
       </FormattedPlural>
     )
 
-    expect(spy.calls.length).toBe(1)
-    expect(spy.calls[0].arguments).toEqual([props[intl.formatPlural(num)]])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(props[intl.formatPlural(num)])
 
     expect(rendered.find('b').length).toEqual(1)
     expect(rendered.text()).toBe('Jest')

@@ -4,23 +4,23 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, { useMemo } from 'react'
-import PropTypes from 'prop-types'
-import useIntl from './useIntl'
-import { intlShape, dateTimeFormatPropTypes } from '../types'
+import React, {useMemo} from 'react';
+import PropTypes from 'prop-types';
+import useIntl from './useIntl';
+import {intlShape, dateTimeFormatPropTypes} from '../types';
 
 function FormattedTime(props) {
-  const { formatTime, textComponent: Text } = useIntl()
-  const { value, children } = props
+  const {formatTime, textComponent: Text} = useIntl();
+  const {value, children} = props;
 
   return useMemo(() => {
-    let formattedTime = formatTime(value, props)
+    let formattedTime = formatTime(value, props);
 
     if (typeof children === 'function') {
-      return children(formattedTime)
+      return children(formattedTime);
     }
 
-    return <Text>{formattedTime}</Text>
+    return <Text>{formattedTime}</Text>;
   }, [
     value,
     children,
@@ -37,10 +37,10 @@ function FormattedTime(props) {
     props.minute,
     props.second,
     props.timeZoneName,
-  ])
+  ]);
 }
 
-FormattedTime.displayName = 'FormattedTime'
+FormattedTime.displayName = 'FormattedTime';
 
 FormattedTime.propTypes = {
   ...dateTimeFormatPropTypes,
@@ -48,6 +48,6 @@ FormattedTime.propTypes = {
   value: PropTypes.any.isRequired,
   format: PropTypes.string,
   children: PropTypes.func,
-}
+};
 
-export default FormattedTime
+export default FormattedTime;

@@ -1,30 +1,25 @@
-import expect, { createSpy, spyOn } from 'expect'
 import React from 'react'
 import { mount } from 'enzyme'
 import { mountWithContext, generateIntlContext } from '../testUtils'
 import FormattedDate from '../../../src/components/date'
-
-// const mockContext = makeMockContext(
-//   require.resolve('../../../src/components/date')
-// )
 
 describe('<FormattedDate>', () => {
   let consoleError
   let intl
 
   beforeEach(() => {
-    consoleError = spyOn(console, 'error')
+    consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
     intl = generateIntlContext({
       locale: 'en',
     })
   })
 
   afterEach(() => {
-    consoleError.restore()
+    consoleError.mockRestore()
   })
 
   it('has a `displayName`', () => {
-    expect(FormattedDate.displayName).toBeA('string')
+    expect(typeof FormattedDate.displayName).toBe('string')
   })
 
   it('throws when <IntlProvider> is missing from ancestry', () => {
@@ -40,13 +35,13 @@ describe('<FormattedDate>', () => {
 
     expect(isFinite(value)).toBe(true)
 
-    expect(consoleError.calls.length).toBe(0)
+    expect(consoleError).not.toHaveBeenCalled()
 
     mountWithContext(intl, <FormattedDate />)
 
-    expect(consoleError.calls.length).toBe(1) // propTypes
-    expect(consoleError.calls[0].arguments[0]).toContain(
-      '[React Intl] Error formatting date.\nRangeError'
+    expect(consoleError).toHaveBeenCalledTimes(1)
+    expect(consoleError).toHaveBeenCalledWith(
+      '[React Intl] Error formatting date.\nRangeError: Invalid time value'
     )
   })
 
@@ -62,7 +57,7 @@ describe('<FormattedDate>', () => {
   it('should not re-render when props are the same', () => {
     const date = Date.now()
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mountWithContext(
       intl,
       <FormattedDate value={date}>{spy}</FormattedDate>
@@ -72,13 +67,13 @@ describe('<FormattedDate>', () => {
       ...withInlContext.props(),
     })
 
-    expect(spy.calls.length).toBe(1)
+    expect(spy).toHaveBeenCalledTimes(1)
   })
 
   it('should re-render when props change', () => {
     const date = Date.now()
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mountWithContext(
       intl,
       <FormattedDate value={date}>{spy}</FormattedDate>
@@ -89,13 +84,13 @@ describe('<FormattedDate>', () => {
       value: withInlContext.prop('value') + 1,
     })
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   xit('should re-render when context changes', () => {
     const date = Date.now()
 
-    const spy = createSpy().andReturn(null)
+    const spy = jest.fn(() => null)
     const withInlContext = mount(
       <FormattedDate value={date}>{spy}</FormattedDate>
     )
@@ -105,7 +100,7 @@ describe('<FormattedDate>', () => {
     })
     withInlContext.instance().mockContext(otherIntl)
 
-    expect(spy.calls.length).toBe(2)
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 
   it('accepts valid Intl.DateTimeFormat options as props', () => {
@@ -128,7 +123,7 @@ describe('<FormattedDate>', () => {
     )
 
     expect(rendered.text()).toBe(String(date))
-    expect(consoleError.calls.length).toBeGreaterThan(0)
+    expect(consoleError).toHaveBeenCalled()
   })
 
   it('accepts `format` prop', () => {
@@ -155,14 +150,14 @@ describe('<FormattedDate>', () => {
   it('supports function-as-child pattern', () => {
     const date = Date.now()
 
-    const spy = createSpy().andReturn(<b>Jest</b>)
+    const spy = jest.fn(() => <b>Jest</b>)
     const rendered = mountWithContext(
       intl,
       <FormattedDate value={date}>{spy}</FormattedDate>
     )
 
-    expect(spy.calls.length).toBe(1)
-    expect(spy.calls[0].arguments).toEqual([intl.formatDate(date)])
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy).toHaveBeenCalledWith(intl.formatDate(date))
 
     expect(rendered.find('b').length).toEqual(1)
     expect(rendered.text()).toBe('Jest')

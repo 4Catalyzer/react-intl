@@ -42,6 +42,11 @@
   },
   "jest": {
     "testRegex": "/test/(unit|functional)/.*\\.js",
+    "transformIgnorePatterns": [
+      "dist/.*",
+      "locale-data/.*",
+      "lib/index.js"
+    ],
     "testPathIgnorePatterns": [
       "test/functional/support",
       "/test/unit/testUtils"
@@ -64,7 +69,14 @@
         "statements": 95
       }
     },
-    "setupTestFrameworkScriptFile": "./test/setup.js"
+    "setupFilesAfterEnv": [
+      "./test/setup.js"
+    ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "bracketSpacing": false
   },
   "dependencies": {
     "hoist-non-react-statics": "^3.3.0",
@@ -104,7 +116,7 @@
     "enzyme-adapter-react-16": "^1.12.1",
     "eslint": "^3.10.2",
     "eslint-plugin-react": "^7.0.1",
-    "expect": "^1.9.0",
+    "expect": "^24.7.1",
     "express": "^4.13.3",
     "formatjs-extract-cldr-data": "^6.0.0",
     "glob": "^7.0.0",
@@ -133,7 +145,7 @@
     "watchify": "^3.7.0"
   },
   "scripts": {
-    "format": "prettier --write --single-quote --trailing-comma=es5 --bracket-spacing false *.js scripts/*.js src/{*.js,**/*.js}",
+    "format": "prettier --write *.js scripts/*.js src/{*.js,**/*.js}",
     "clean": "rimraf src/en.js coverage/ dist/ lib/ locale-data/ test/renderer.js",
     "build:data": "babel-node scripts/build-data",
     "build:lib": "rollup -c rollup.config.lib.js",
@@ -143,10 +155,9 @@
     "build": "yarn run build:data && yarn run build:lib && yarn run build:dist",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "react:16": "yarn run react:clean && yarn add -D react@^16.3.1 react-dom@^16.3.3 react-test-renderer@^16.3.1 --ignore-scripts",
+    "react:16": "yarn run react:clean && yarn add -D react@^16.8.0 react-dom@^16.8.0 react-test-renderer@^16.8.0 --ignore-scripts",
     "test": "jest --coverage --verbose",
-    "test:react": "yarn run react:14 && jest && yarn run react:15 && jest && yarn run react:16 && jest",
-    "test:all": "yarn run lint && yarn run test && yarn run test:react",
+    "test:all": "yarn run lint && yarn run test",
     "test:watch": "jest --watch",
     "test:perf": "cross-env NODE_ENV=production babel-node test/perf",
     "examples:install": "babel-node scripts/examples yarn install",

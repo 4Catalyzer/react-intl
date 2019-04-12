@@ -5,44 +5,39 @@
  */
 
 import React from 'react';
-import withIntl from './withIntl';
-import {BaseFormattedMessage} from './message';
+import useIntl from './useIntl';
+import {arePropsEqual} from './message';
 
-class FormattedHTMLMessage extends BaseFormattedMessage {
-  static displayName = 'FormattedHTMLMessage'
+function FormattedHTMLMessage(props) {
+  const {formatHTMLMessage, textComponent: Text} = useIntl();
+  const {
+    id,
+    description,
+    defaultMessage,
+    values: rawValues,
+    tagName: Component = Text,
+    children,
+  } = props;
 
-  render() {
-    const {formatHTMLMessage, textComponent: Text} = this.props.intl;
+  let descriptor = {id, description, defaultMessage};
+  let formattedHTMLMessage = formatHTMLMessage(descriptor, rawValues);
 
-    const {
-      id,
-      description,
-      defaultMessage,
-      values: rawValues,
-      tagName: Component = Text,
-      children,
-    } = this.props;
-
-    let descriptor = {id, description, defaultMessage};
-    let formattedHTMLMessage = formatHTMLMessage(descriptor, rawValues);
-
-    if (typeof children === 'function') {
-      return children(formattedHTMLMessage);
-    }
-
-    // Since the message presumably has HTML in it, we need to set
-    // `innerHTML` in order for it to be rendered and not escaped by React.
-    // To be safe, all string prop values were escaped when formatting the
-    // message. It is assumed that the message is not UGC, and came from the
-    // developer making it more like a template.
-    //
-    // Note: There's a perf impact of using this component since there's no
-    // way for React to do its virtual DOM diffing.
-    const html = {__html: formattedHTMLMessage};
-    return <Component dangerouslySetInnerHTML={html} />;
+  if (typeof children === 'function') {
+    return children(formattedHTMLMessage);
   }
+
+  // Since the message presumably has HTML in it, we need to set
+  // `innerHTML` in order for it to be rendered and not escaped by React.
+  // To be safe, all string prop values were escaped when formatting the
+  // message. It is assumed that the message is not UGC, and came from the
+  // developer making it more like a template.
+  //
+  // Note: There's a perf impact of using this component since there's no
+  // way for React to do its virtual DOM diffing.
+  const html = {__html: formattedHTMLMessage};
+  return <Component dangerouslySetInnerHTML={html} />;
 }
 
-export const BaseFormattedHTMLMessage = FormattedHTMLMessage // testing purpose only
+FormattedHTMLMessage.displayName = 'FormattedHTMLMessage';
 
-export default withIntl(FormattedHTMLMessage);
+export default React.memo(FormattedHTMLMessage, arePropsEqual);

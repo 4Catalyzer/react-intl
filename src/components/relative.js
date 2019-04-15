@@ -4,11 +4,11 @@
  * See the accompanying LICENSE file for terms.
  */
 
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import PropTypes from 'prop-types';
 import withIntl from './withIntl';
 import {intlShape, relativeFormatPropTypes} from '../types';
-import {invariantIntlContext, shouldIntlComponentUpdate} from '../utils';
+import {invariantIntlContext} from '../utils';
 
 const SECOND = 1000;
 const MINUTE = 1000 * 60;
@@ -65,7 +65,7 @@ function isSameDate(a, b) {
   return isFinite(aTime) && isFinite(bTime) && aTime === bTime;
 }
 
-class FormattedRelative extends Component {
+class FormattedRelative extends PureComponent {
   static displayName = 'FormattedRelative';
 
   static propTypes = {
@@ -113,7 +113,7 @@ class FormattedRelative extends Component {
     const unitDelay = getUnitDelay(units || selectUnits(delta));
     const unitRemainder = Math.abs(delta % unitDelay);
 
-    // We want the largest possible timer delay which will still display
+    // We want the largest possible timer delay which will stqill display
     // accurate information while reducing unnecessary re-renders. The delay
     // should be until the next "interesting" moment, like a tick from
     // "1 minute ago" to "2 minutes ago" when the delta is 120,000ms.
@@ -137,10 +137,6 @@ class FormattedRelative extends Component {
     if (!isSameDate(nextValue, this.props.value)) {
       this.setState({now: this.props.intl.now()});
     }
-  }
-
-  shouldComponentUpdate(...next) {
-    return shouldIntlComponentUpdate(this, ...next);
   }
 
   componentWillUpdate(nextProps, nextState) {
@@ -168,6 +164,6 @@ class FormattedRelative extends Component {
   }
 }
 
-export const BaseFormattedRelative = FormattedRelative
+export const BaseFormattedRelative = FormattedRelative;
 
-export default withIntl(FormattedRelative)
+export default withIntl(FormattedRelative);

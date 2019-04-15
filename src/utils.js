@@ -11,18 +11,16 @@ file in the root directory of React's source tree.
 
 import invariant from 'invariant';
 
-const ESCAPED_CHARS = {
-  '&': '&amp;',
-  '>': '&gt;',
-  '<': '&lt;',
-  '"': '&quot;',
-  "'": '&#x27;',
-};
-
 const UNSAFE_CHARS_REGEX = /[&><"']/g;
 
 export function escape(str) {
-  return ('' + str).replace(UNSAFE_CHARS_REGEX, match => ESCAPED_CHARS[match]);
+  return ('' + str).replace(UNSAFE_CHARS_REGEX, match => {
+    if (match === '&') return '&amp;';
+    else if (match === '>') return '&gt;';
+    else if (match === '<') return '&lt;';
+    else if (match === '"') return '&quot;';
+    else if (match === "'") return '&#x27;';
+  });
 }
 
 export function filterProps(props, whitelist, defaults = {}) {
@@ -75,17 +73,6 @@ export function shallowEquals(objA, objB) {
   }
 
   return true;
-}
-
-export function shouldIntlComponentUpdate(
-  {props, state},
-  nextProps,
-  nextState
-) {
-  return (
-    !shallowEquals(nextProps, props) ||
-    !shallowEquals(nextState, state)
-  );
 }
 
 export function createError(message, exception) {

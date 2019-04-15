@@ -29,7 +29,7 @@ export default {
     babel(),
     commonjs(),
     nodeResolve({
-      jsnext: true
-    })
+      jsnext: true,
+    }),
   ],
 };
